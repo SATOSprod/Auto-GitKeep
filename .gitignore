@@ -1,0 +1,33 @@
+# ── Dependencies ──────────────────────────
+node_modules/
+
+# ── Build output ──────────────────────────
+main.js
+main.js.map
+
+# ── Obsidian plugin data ───────────────────
+data.json
+
+# ── TypeScript cache ───────────────────────
+*.tsbuildinfo
+
+# ── OS files ──────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor configs ────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Archive / dist artifacts ──────────────
+*.zip
+dist/
+
+# ── Environment / secrets ─────────────────
+.env
+.env.local
+.env.*
