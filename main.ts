@@ -204,17 +204,17 @@ export default class AutoGitKeepPlugin extends Plugin {
 
 	updateStatusBar() {
 		if (!this.statusBarItem) return;
-		this.statusBarItem.empty();
-		this.statusBarItem.addClass("agk-statusbar");
-		this.statusBarItem.innerHTML = this.settings.autoEnabled
-			? `${SVG_GITKEEP}<span>GitKeep: on</span>`
-			: `${SVG_GITKEEP}<span>GitKeep: off</span>`;
-		this.statusBarItem.setAttribute(
-			"title",
-			this.settings.autoEnabled
-				? "Auto GitKeep is active — new folders get .gitkeep automatically"
-				: "Auto GitKeep is paused"
-		);
+		// this.statusBarItem.empty();
+		// this.statusBarItem.addClass("agk-statusbar");
+		// this.statusBarItem.innerHTML = this.settings.autoEnabled
+		// 	? `${SVG_GITKEEP}<span>GitKeep: on</span>`
+		// 	: `${SVG_GITKEEP}<span>GitKeep: off</span>`;
+		// this.statusBarItem.setAttribute(
+		// 	"title",
+		// 	this.settings.autoEnabled
+		// 		? "Auto GitKeep is active — new folders get .gitkeep automatically"
+		// 		: "Auto GitKeep is paused"
+		// );
 	}
 
 	// ── Settings persistence ──────────────────
