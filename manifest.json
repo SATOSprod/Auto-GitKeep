@@ -1,7 +1,7 @@
 {
   "id": "auto-gitkeep",
   "name": "Auto GitKeep",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "minAppVersion": "1.7.2",
   "description": "Automatically places a .gitkeep file in every folder of your vault so empty directories are tracked by Git. Scans existing folders on load and watches for new ones.",
   "author": "SATOSprod",
