@@ -107,3 +107,9 @@
   height: 13px;
   flex-shrink: 0;
 }
+
+.agk-excluded-textarea {
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: 12px;
+}

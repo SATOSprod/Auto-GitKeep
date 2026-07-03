@@ -28,7 +28,7 @@ Git does not track empty directories. If your vault has folders with no files â€
 
 ## Requirements
 
-- Obsidian **0.15.0** or later
+- Obsidian **1.4.0** or later
 - Works on **desktop and mobile**
 
 ---

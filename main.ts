@@ -36,11 +36,12 @@ interface AutoGitKeepSettings {
 	excludedPaths: string;
 }
 
-const DEFAULT_SETTINGS: AutoGitKeepSettings = {
-	autoEnabled:   true,
-	excludedPaths: ".obsidian\n.trash",
-};
-
+function getDefaultSettings(app: App): AutoGitKeepSettings {
+	return {
+		autoEnabled: true,
+		excludedPaths: `${app.vault.configDir}\n.trash`,
+	};
+}
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -53,6 +54,14 @@ function parseExcluded(raw: string): Set<string> {
 			.map((l) => normalizePath(l.trim()))
 			.filter(Boolean)
 	);
+}
+
+function appendSvg(target: HTMLElement, svg: string): void {
+	const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+	const node = doc.documentElement;
+	if (node && node.nodeName.toLowerCase() === "svg") {
+		target.appendChild(target.ownerDocument.importNode(node, true));
+	}
 }
 
 /** Return true if the given folder path should be skipped */
@@ -114,7 +123,7 @@ async function removeGitKeep(app: App, folder: TFolder): Promise<boolean> {
 
 	const file = app.vault.getFileByPath(filePath);
 	if (file) {
-		await app.vault.delete(file);
+		await app.fileManager.trashFile(file);
 		return true;
 	}
 	return false;
@@ -206,9 +215,8 @@ export default class AutoGitKeepPlugin extends Plugin {
 		if (!this.statusBarItem) return;
 		// this.statusBarItem.empty();
 		// this.statusBarItem.addClass("agk-statusbar");
-		// this.statusBarItem.innerHTML = this.settings.autoEnabled
-		// 	? `${SVG_GITKEEP}<span>GitKeep: on</span>`
-		// 	: `${SVG_GITKEEP}<span>GitKeep: off</span>`;
+		// appendSvg(this.statusBarItem, SVG_GITKEEP);
+		// this.statusBarItem.createSpan({ text: this.settings.autoEnabled ? "GitKeep: on" : "GitKeep: off" });
 		// this.statusBarItem.setAttribute(
 		// 	"title",
 		// 	this.settings.autoEnabled
@@ -220,7 +228,8 @@ export default class AutoGitKeepPlugin extends Plugin {
 	// ── Settings persistence ──────────────────
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const loaded = (await this.loadData()) as Partial<AutoGitKeepSettings> | null;
+		this.settings = Object.assign({}, getDefaultSettings(this.app), loaded ?? {});
 	}
 
 	async saveSettings() {
@@ -244,17 +253,17 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 	// ── Rich description helper ───────────────
 
 	private desc(parts: Array<string | { strong?: string; code?: string }>): DocumentFragment {
-		const frag = document.createDocumentFragment();
+		const frag = activeDocument.createDocumentFragment();
 		for (const p of parts) {
 			if (typeof p === "string") {
 				frag.appendText(p);
 			} else if (p.strong) {
-				const el = document.createElement("span");
+				const el = activeDocument.createElement("span");
 				el.className = "agk-desc-strong";
 				el.textContent = p.strong;
 				frag.appendChild(el);
 			} else if (p.code) {
-				const el = document.createElement("code");
+				const el = activeDocument.createElement("code");
 				el.className = "agk-desc-code";
 				el.textContent = p.code;
 				frag.appendChild(el);
@@ -269,10 +278,8 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Auto GitKeep" });
-
 		// ─── General ──────────────────────────
-		containerEl.createEl("h3", { text: "General", cls: "agk-section-heading" });
+		new Setting(containerEl).setName("General").setHeading();
 
 		new Setting(containerEl)
 			.setName("Auto GitKeep")
@@ -298,27 +305,25 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 				"Vault-relative folder paths to skip — one per line. ",
 				{ strong: "Subdirectories are excluded automatically." },
 				" Example: ",
-				{ code: ".obsidian" },
+				{ code: this.app.vault.configDir },
 				", ",
 				{ code: ".trash" },
 				".",
 			]))
 			.addTextArea((ta) => {
-				ta.setPlaceholder(".obsidian\n.trash")
+				ta.setPlaceholder(`${this.app.vault.configDir}\n.trash`)
 					.setValue(this.plugin.settings.excludedPaths)
 					.onChange(async (value) => {
 						this.plugin.settings.excludedPaths = value;
 						await this.plugin.saveSettings();
 					});
-				ta.inputEl.rows = 5;
-				ta.inputEl.style.width = "100%";
-				ta.inputEl.style.fontFamily = "var(--font-monospace)";
-				ta.inputEl.style.fontSize = "12px";
+					ta.inputEl.rows = 5;
+					ta.inputEl.addClass("agk-excluded-textarea");
 				return ta;
 			});
 
 		// ─── Actions ──────────────────────────
-		containerEl.createEl("h3", { text: "Actions", cls: "agk-section-heading" });
+		new Setting(containerEl).setName("Actions").setHeading();
 
 		containerEl.createEl("p", {
 			text: "Run these operations on demand regardless of the auto toggle above.",
@@ -329,7 +334,8 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 
 		// Button: Scan & add all
 		const addBtn = actionsRow.createEl("button", { cls: "agk-btn mod-cta" });
-		addBtn.innerHTML = `${SVG_SCAN}<span>Add .gitkeep to all folders</span>`;
+		appendSvg(addBtn, SVG_SCAN);
+		addBtn.createSpan({ text: "Add .gitkeep to all folders" });
 		addBtn.onclick = async () => {
 			addBtn.setAttribute("disabled", "true");
 			addBtn.querySelector("span")!.textContent = "Working…";
@@ -347,7 +353,8 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 
 		// Button: Remove all
 		const removeBtn = actionsRow.createEl("button", { cls: "agk-btn mod-danger" });
-		removeBtn.innerHTML = `${SVG_TRASH}<span>Remove all .gitkeep</span>`;
+		appendSvg(removeBtn, SVG_TRASH);
+		removeBtn.createSpan({ text: "Remove all .gitkeep" });
 		removeBtn.onclick = async () => {
 			removeBtn.setAttribute("disabled", "true");
 			removeBtn.querySelector("span")!.textContent = "Removing…";
@@ -363,7 +370,7 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 		};
 
 		// ─── Status ───────────────────────────
-		containerEl.createEl("h3", { text: "Status", cls: "agk-section-heading" });
+		new Setting(containerEl).setName("Status").setHeading();
 
 		const statusDiv = containerEl.createDiv({ cls: "agk-status-block" });
 
@@ -390,13 +397,14 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 			isFolderExcluded(f.path, excluded)
 		).length;
 
-		statusDiv.createEl("p").innerHTML =
-			`<strong>Auto mode:</strong> ${this.plugin.settings.autoEnabled ? "Enabled" : "Disabled"}`;
-		statusDiv.createEl("p").innerHTML =
-			`<strong>Total folders:</strong> ${totalFolders}`;
-		statusDiv.createEl("p").innerHTML =
-			`<strong>Excluded folders:</strong> ${excludedCount}`;
-		statusDiv.createEl("p").innerHTML =
-			`<strong>.gitkeep files present:</strong> ${totalGitKeep}`;
+		const statusLine = (label: string, value: string | number) => {
+			const p = statusDiv.createEl("p");
+			p.createEl("strong", { text: `${label}:` });
+			p.appendText(` ${value}`);
+		};
+		statusLine("Auto mode", this.plugin.settings.autoEnabled ? "Enabled" : "Disabled");
+		statusLine("Total folders", totalFolders);
+		statusLine("Excluded folders", excludedCount);
+		statusLine(".gitkeep files present", totalGitKeep);
 	}
 }
