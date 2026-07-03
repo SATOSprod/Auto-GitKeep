@@ -5,6 +5,7 @@ import {
 	PluginSettingTab,
 	Setting,
 	TAbstractFile,
+	TFile,
 	TFolder,
 	normalizePath,
 } from "obsidian";
@@ -19,7 +20,7 @@ const GITKEEP_FILENAME = ".gitkeep";
 // SVG icons
 // ─────────────────────────────────────────────
 
-const SVG_GITKEEP = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>`;
+// const SVG_GITKEEP = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>`;
 
 const SVG_TRASH = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
 
@@ -121,8 +122,8 @@ async function removeGitKeep(app: App, folder: TFolder): Promise<boolean> {
 	);
 	if (!(await app.vault.adapter.exists(filePath))) return false;
 
-	const file = app.vault.getFileByPath(filePath);
-	if (file) {
+	const file = app.vault.getAbstractFileByPath(filePath);
+	if (file instanceof TFile) {
 		await app.fileManager.trashFile(file);
 		return true;
 	}
@@ -279,7 +280,7 @@ class AutoGitKeepSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// ─── General ──────────────────────────
-		new Setting(containerEl).setName("General").setHeading();
+		// new Setting(containerEl).setName("General").setHeading();
 
 		new Setting(containerEl)
 			.setName("Auto GitKeep")
